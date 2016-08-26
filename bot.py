@@ -6,7 +6,7 @@ from textblob import TextBlob
 
 import logging
 
-from memory import Memory, MemoryInfo
+from memory import Memory, MemoryInfo, POS_words
 ################################################################
 
 
@@ -58,7 +58,21 @@ def respond(sentence):
     ####################################
 
     #Vai armazenar o que chegou na memoria pra testar
+    print("Pronoun=%s, noun=%s, adjective=%s, verb=%s" %(pronoun, noun, adjective, verb))
 
+    #Chega aqui invertido entao tem q inverter de novo
+    if pronoun == 'you':
+        refered_to = 'user'
+    elif pronoun == 'I':
+        refered_to = 'bot'
+    else:
+        refered_to = pronoun
+
+    pos_words = POS_words(pronoun, verb, noun, adjective)
+    print(pos_words)
+    memory_info = MemoryInfo(refered_to, pos_words)
+    bot_memory.add_new_memory(memory_info)
+    bot_memory.show_all_memories()
     ####################################
 
     # If we said something about the bot and used some kind of direct noun, construct the
@@ -153,6 +167,8 @@ def find_pronoun(sent):
             # If the user mentioned themselves, then they will definitely be the pronoun
 
             pronoun = 'You'
+        elif part_of_speech == 'PRP':
+            pronoun = word
 
     return pronoun
 
@@ -166,7 +182,7 @@ def find_noun(sent):
 		if part_of_speech == 'NN':
 			noun = 'fucking ' + word
 		# if part_of_speech == 'NNS':
-		else:
+		elif part_of_speech == 'NN' :
 			noun = word
 		# Se for NNP eh um nome proprio entao vai ter citado algo ou alguem
 
@@ -175,12 +191,13 @@ def find_noun(sent):
 
 def find_verb(sent):
 
-	verb = None
+	ver = None
 
 	for word, part_of_speech in sent.pos_tags:
 		if part_of_speech == 'VBP' and word.lower() == 'like':
 			verb = 'also like'
-
+		elif part_of_speech == 'VBP':
+			verb = word
 	return verb
 
 def find_adjective(sent):
@@ -190,6 +207,8 @@ def find_adjective(sent):
 	for word, part_of_speech in sent.pos_tags:
 		if part_of_speech == 'JJ' and word.lower() == 'pretty':
 			adjective = 'so pretty'
+		elif part_of_speech == 'JJ':
+			adjective = word
 
 	return adjective
 
@@ -332,7 +351,16 @@ def filter_response(resp):
 
 ############################################################################################
 
-user_input = input("Fala com o bot, porra! \n")
-print(user_input)
 
-print(respond(user_input))
+# Iniciando a memoria do Bot
+bot_memory = Memory()
+
+user_input = input("Fala com o bot, porra! \n")
+
+while True:
+    print(user_input)
+    print(respond(user_input))
+    user_input = input()
+    if user_input == "exit()":
+        break
+
